@@ -40,12 +40,11 @@ finalAnswer = runIntcode(inputUsed)
 print(finalAnswer[0])
 
 
+# brute force first b/c why not?
 def findNounVerb(target):
     for i in range(100):
         for j in range(100):
-            currentInput = [1, i, j] + inputUsed[3:]
-
-            answer = runIntcode(currentInput)
+            answer = runIntcode([1, i, j] + inputUsed[3:])
 
             if answer[0] == target:
                 return i * 100 + j
