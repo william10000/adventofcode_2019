@@ -6,11 +6,12 @@ inputWire2 = 'L1008,D451,L146,D628,R877,U486,L464,U815,L119,U208,R686,U477,L510,
 
 
 # takes a string and converts it into a set of lines defined by tuples
-# that represent coordinates of both ends of each line.
+# that represent coordinates of both ends of each line. Note that the
+# lines are define such that the first set of coordinates is visited first
 # eg. { (x1, y1, x2, y2), (x1, y1, x2, y2), etc}
 def getWireLinesFromPathString(pathstring):
     directions = pathstring.split(',')
-    lines = set()
+    lines = []
     start = [0, 0]
     for direction in directions:
         stop = []
@@ -26,7 +27,7 @@ def getWireLinesFromPathString(pathstring):
         else:  # UDLR == 'R':
             stop = [start[0] + distance, start[1]]
 
-        lines.add(tuple(start + stop))
+        lines.append(tuple(start + stop))
         start = stop
     return lines
 
@@ -63,11 +64,39 @@ def getIntersection(line1, line2):
     return intersection
 
 
-def findNearestIntersection(wire1, wire2):
+def isPointOnLine(line, point):
+    if (point[1] == line[1] and point[0] >= min(line[0], line[2])
+            and point[0] <= max(line[0], line[2])) or (
+                point[0] == line[0] and point[1] >= min(line[1], line[3])
+                and point[1] <= max(line[1], line[3])):
+        return True
+
+    return False
+
+
+def getLineLength(line):
+    return abs(line[3] - line[1]) + abs(line[2] - line[0])
+
+
+def findStepsToIntersection(lines, intersection):
+    steps = 0
+
+    for line in lines:
+        if isPointOnLine(line, intersection):
+            steps += getLineLength(list(line[:2]) + intersection)
+            return steps
+        else:
+            steps += getLineLength(line)
+
+    return steps
+
+
+def findNearestAndFastestIntersection(wire1, wire2):
     lines1 = getWireLinesFromPathString(wire1)
     lines2 = getWireLinesFromPathString(wire2)
 
     minDistance = sys.maxsize
+    minSteps = sys.maxsize
 
     # brute force b/c it's a quick 1st try
     for line1 in lines1:
@@ -77,63 +106,61 @@ def findNearestIntersection(wire1, wire2):
                     intersection[0]) + abs(intersection[1]) != 0:
                 minDistance = min(minDistance,
                                   abs(intersection[0]) + abs(intersection[1]))
+                minSteps = min(
+                    minSteps,
+                    findStepsToIntersection(lines1, intersection) +
+                    findStepsToIntersection(lines2, intersection))
 
-    return minDistance
-
-
-def findFastestIntersection(wire1, wire2):
-    lines1 = getWireLinesFromPathString(wire1)
-    lines2 = getWireLinesFromPathString(wire2)
-
-    minSteps = sys.maxsize
-
-    return minSteps
+    return [minDistance, minSteps]
 
 
-print('Part 1: Nearest Intersection is ',
-      findNearestIntersection(inputWire1, inputWire2))
-
-print('Part 2: Fastest Intersection is ',
-      findNearestIntersection(inputWire1, inputWire2))
+print('Nearest and fastest intersection is ',
+      findNearestAndFastestIntersection(inputWire1, inputWire2))
 
 
 class Test(unittest.TestCase):
+    testLineSet1 = [
+        (0, 0, 8, 0),  # R8
+        (8, 0, 8, 5),  # U5
+        (8, 5, 3, 5),  # L5
+        (3, 5, 3, 2),  # D3
+    ]
+
+    testLineSet2 = [
+        (0, 0, 0, 7),  # U7
+        (0, 7, 6, 7),  # R6
+        (6, 7, 6, 3),  # D4
+        (6, 3, 2, 3),  # L4
+    ]
+
     def test01(self):
-        actual = findNearestIntersection('R8,U5,L5,D3', 'U7,R6,D4,L4')
-        expected = 6
+        actual = findNearestAndFastestIntersection('R8,U5,L5,D3',
+                                                   'U7,R6,D4,L4')
+        expected = [6, 30]
         self.assertEqual(actual, expected)
 
     def test02(self):
-        actual = findNearestIntersection('R75,D30,R83,U83,L12,D49,R71,U7,L72',
-                                         'U62,R66,U55,R34,D71,R55,D58,R83')
-        expected = 159
+        actual = findNearestAndFastestIntersection(
+            'R75,D30,R83,U83,L12,D49,R71,U7,L72',
+            'U62,R66,U55,R34,D71,R55,D58,R83')
+        expected = [159, 610]
         self.assertEqual(actual, expected)
 
     def test03(self):
-        actual = findNearestIntersection(
+        actual = findNearestAndFastestIntersection(
             'R98,U47,R26,D63,R33,U87,L62,D20,R33,U53,R51',
             'U98,R91,D20,R16,D67,R40,U7,R15,U6,R7')
-        expected = 135
+        expected = [135, 410]
         self.assertEqual(actual, expected)
 
     def test04(self):
         actual = getWireLinesFromPathString('R8,U5,L5,D3')
-        expected = set([
-            (0, 0, 8, 0),  # R8
-            (8, 0, 8, 5),  # U5
-            (8, 5, 3, 5),  # L5
-            (3, 5, 3, 2),  # D3
-        ])
+        expected = self.testLineSet1
         self.assertEqual(actual, expected)
 
     def test05(self):
         actual = getWireLinesFromPathString('U7,R6,D4,L4')
-        expected = set([
-            (0, 0, 0, 7),  # U7
-            (0, 7, 6, 7),  # R6
-            (6, 7, 6, 3),  # D4
-            (6, 3, 2, 3),  # L4
-        ])
+        expected = self.testLineSet2
         self.assertEqual(actual, expected)
 
     def test06(self):
@@ -168,29 +195,55 @@ class Test(unittest.TestCase):
         expected = [None, None]
         self.assertEqual(actual, expected)
 
-    # part 1 solution
+    # part 1/2 solution
     def test12(self):
-        actual = findNearestIntersection(inputWire2, inputWire1)
-        expected = 386
+        actual = findNearestAndFastestIntersection(inputWire2, inputWire1)
+        expected = [386, 6484]
         self.assertEqual(actual, expected)
 
-    # tests for part 2
     def test13(self):
-        actual = findNearestIntersection('R8,U5,L5,D3', 'U7,R6,D4,L4')
-        expected = 30
+        actual = findStepsToIntersection(self.testLineSet1, [3, 3])
+        expected = 20
         self.assertEqual(actual, expected)
 
     def test14(self):
-        actual = findNearestIntersection('R75,D30,R83,U83,L12,D49,R71,U7,L72',
-                                         'U62,R66,U55,R34,D71,R55,D58,R83')
-        expected = 610
+        actual = findStepsToIntersection(self.testLineSet2, [3, 3])
+        expected = 20
         self.assertEqual(actual, expected)
 
     def test15(self):
-        actual = findNearestIntersection(
-            'R98,U47,R26,D63,R33,U87,L62,D20,R33,U53,R51',
-            'U98,R91,D20,R16,D67,R40,U7,R15,U6,R7')
-        expected = 410
+        actual = findStepsToIntersection(self.testLineSet1, [6, 5])
+        expected = 15
+        self.assertEqual(actual, expected)
+
+    def test16(self):
+        actual = findStepsToIntersection(self.testLineSet2, [6, 5])
+        expected = 15
+        self.assertEqual(actual, expected)
+
+    def test17(self):
+        actual = getLineLength((3, 5, 3, 2))
+        expected = 3
+        self.assertEqual(actual, expected)
+
+    def test18(self):
+        actual = getLineLength((6, 7, 6, 3))
+        expected = 4
+        self.assertEqual(actual, expected)
+
+    def test19(self):
+        actual = isPointOnLine((3, 5, 3, 2), [3, 3])
+        expected = True
+        self.assertEqual(actual, expected)
+
+    def test20(self):
+        actual = isPointOnLine((6, 7, 6, 3), [6, 4])
+        expected = True
+        self.assertEqual(actual, expected)
+
+    def test21(self):
+        actual = isPointOnLine((6, 7, 6, 3), [6, 9])
+        expected = False
         self.assertEqual(actual, expected)
 
 
