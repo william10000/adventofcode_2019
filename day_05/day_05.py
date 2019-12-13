@@ -10,14 +10,14 @@ def getParameterFromOpcodeString(current, intcode):
 
     # print(current, intcode, modeString, modeString[-1], modeString[-2], numberOfInstructions)
     if numberOfInstructions == 0:
-      # both in position mode
-      return [intcode[intcode[current + 1]], intcode[intcode[current + 2]]]
+        # both in position mode
+        return [intcode[intcode[current + 1]], intcode[intcode[current + 2]]]
 
     # first is either 0 or 1
     if modeString[-1] == '0':
-      parameter1 = intcode[intcode[current + 1]]
+        parameter1 = intcode[intcode[current + 1]]
     else:
-      parameter1 = intcode[current + 1]
+        parameter1 = intcode[current + 1]
 
     # 2nd either doesn't exist or is 1
     if numberOfInstructions > 1:
