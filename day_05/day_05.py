@@ -7,11 +7,14 @@ inputUsed = [3,225,1,225,6,6,1100,1,238,225,104,0,1001,191,50,224,101,-64,224,22
 def getParameterFromOpcodeString(current, intcode):
     modeString = str(intcode[current])[:-2]
     numberOfInstructions = len(modeString)
+    opcode = int(str(intcode[current])[-2:])
 
-    # print(current, intcode, modeString, modeString[-1], modeString[-2], numberOfInstructions)
     if numberOfInstructions == 0:
-        # both in position mode
-        return [intcode[intcode[current + 1]], intcode[intcode[current + 2]]]
+        # both or all in position mode
+        if opcode == 4:
+            return [intcode[intcode[current + 1]], None]
+        else:
+            return [intcode[intcode[current + 1]], intcode[intcode[current + 2]]]
 
     # first is either 0 or 1
     if modeString[-1] == '0':
@@ -20,7 +23,9 @@ def getParameterFromOpcodeString(current, intcode):
         parameter1 = intcode[current + 1]
 
     # 2nd either doesn't exist or is 1
-    if numberOfInstructions > 1:
+    if opcode == 4:
+        return [parameter1, None]
+    elif numberOfInstructions > 1:
         parameter2 = intcode[current + 2]
     else:
         parameter2 = intcode[intcode[current + 2]]
@@ -33,73 +38,180 @@ def runIntcode(intcodeInput, firstInput):
 
     current = 0
     outputs = []
-    count = 0
 
     while current < len(intcode) and intcode[current] != 99:
-        opcodeString = int(str(intcode[current])[-2:]) # get ones and tens digits
+        opcode = int(str(intcode[current])[-2:]) # get ones and tens digits
 
-        if opcodeString == 1: # add two values
+        if opcode == 1: # add two values
             [parameter1, parameter2] = getParameterFromOpcodeString(current, intcode)
             intcode[intcode[current + 3]] = parameter1 + parameter2
             current += 4
-        elif opcodeString == 2: # multiply two values
+        elif opcode == 2: # multiply two values
             [parameter1, parameter2] = getParameterFromOpcodeString(current, intcode)
             intcode[intcode[current + 3]] = parameter1 * parameter2
             current += 4
-        elif opcodeString == 3: # use the input
+        elif opcode == 3: # use the input
             # assume only position mode for now
             intcode[intcode[current + 1]] = input
             current += 2
-        elif opcodeString == 4: # add output to output array
-            # "Parameters that an instruction writes to will never be in immediate mode."
-            outputs.append(intcode[intcode[current + 1]])
+        elif opcode == 4: # add output to output array
+            [parameter1, parameter2] = getParameterFromOpcodeString(current, intcode)
+            outputs.append(parameter1)
             current += 2
+        elif opcode == 5:
+            [parameter1, parameter2] = getParameterFromOpcodeString(current, intcode)
+            if parameter1 != 0:
+                current = parameter2
+            else:
+                current += 3
+        elif opcode == 6:
+            [parameter1, parameter2] = getParameterFromOpcodeString(current, intcode)
+            if parameter1 == 0:
+                current = parameter2
+            else:
+                current += 3
+        elif opcode == 7:
+            [parameter1, parameter2] = getParameterFromOpcodeString(current, intcode)
+            if parameter1 < parameter2:
+                intcode[intcode[current + 3]] = 1
+            else:
+                intcode[intcode[current + 3]] = 0
+            current += 4
+        elif opcode == 8:
+            [parameter1, parameter2] = getParameterFromOpcodeString(current, intcode)
+            if parameter1 == parameter2:
+                intcode[intcode[current + 3]] = 1
+            else:
+                intcode[intcode[current + 3]] = 0
+            current += 4
 
-        count += 1
-    print('current:', current)
-    print('Count: ', count)
     return [intcode, outputs]
 
 print('Part 1 ')
-print(runIntcode(inputUsed, 1))
+answerPart1 = runIntcode(inputUsed, 1)
+print(answerPart1[1])
 
+print('Part 2 ')
+answerPart2 = runIntcode(inputUsed, 5)
+print(answerPart2[1])
 
 class Test(unittest.TestCase):
     # sample test cases
-    def test1(self):
+    def test01(self):
         actual = runIntcode([3,0,4,0,99], 3)
         expected = [[3,0,4,0,99], [3]]
         self.assertEqual(actual, expected)
 
-    def test2(self):
+    def test02(self):
         actual = runIntcode([3,0,4,0,99], -2)
         expected = [[-2,0,4,0,99],[-2]]
         self.assertEqual(actual, expected)
 
-    def test3(self):
+    def test03(self):
         actual = runIntcode([4,0], -2)
         expected = [[4,0],[4]]
         self.assertEqual(actual, expected)
 
-    def test4(self):
+    def test04(self):
         actual = runIntcode([3,0], -2)
         expected = [[-2,0],[]]
         self.assertEqual(actual, expected)
 
-    def test5(self):
+    def test05(self):
         actual = runIntcode([1002,4,3,4,33], 0)
         expected = [[1002,4,3,4,99],[]]
         self.assertEqual(actual, expected)
 
-    def test6(self):
+    def test06(self):
         actual = runIntcode([1101,100,-1,4,0], 0)
         expected = [[1101,100,-1,4,99],[]]
         self.assertEqual(actual, expected)
 
-    def test7(self):
+    def test07(self):
         runIntcodeResults = runIntcode(inputUsed, 1)
         actual = runIntcodeResults[1]
-        expected = [3, 0, 0, 0, 0, 0, 0, 0, 0, 11193703]
+        expected = [0, 0, 0, 0, 0, 0, 0, 0, 0, 11193703]
         self.assertEqual(actual, expected)
+
+    def test08(self):
+        actual = runIntcode([3,9,8,9,10,9,4,9,99,-1,8], 8)
+        expected = [[3,9,8,9,10,9,4,9,99,1,8],[1]]
+        self.assertEqual(actual, expected)
+
+    def test09(self):
+        actual = runIntcode([3,9,8,9,10,9,4,9,99,-1,8], 7)
+        expected = [[3,9,8,9,10,9,4,9,99,0,8],[0]]
+        self.assertEqual(actual, expected)
+
+    def test10(self):
+        actual = runIntcode([3,3,1108,-1,8,3,4,3,99], 8)
+        expected = [[3,3,1108,1,8,3,4,3,99],[1]]
+        self.assertEqual(actual, expected)
+
+    def test11(self):
+        actual = runIntcode([3,3,1108,-1,8,3,4,3,99], 7)
+        expected = [[3,3,1108,0,8,3,4,3,99],[0]]
+        self.assertEqual(actual, expected)
+
+    def test12(self):
+        actual = runIntcode([3,9,7,9,10,9,4,9,99,-1,8], 8)
+        expected = [[3,9,7,9,10,9,4,9,99,0,8],[0]]
+        self.assertEqual(actual, expected)
+
+    def test13(self):
+        actual = runIntcode([3,9,7,9,10,9,4,9,99,-1,8], 7)
+        expected = [[3,9,7,9,10,9,4,9,99,1,8],[1]]
+        self.assertEqual(actual, expected)
+
+    def test14(self):
+        actual = runIntcode([3,3,1107,-1,8,3,4,3,99], 8)
+        expected = [[3,3,1107,0,8,3,4,3,99],[0]]
+        self.assertEqual(actual, expected)
+
+    def test15(self):
+        actual = runIntcode([3,3,1107,-1,8,3,4,3,99], 7)
+        expected = [[3,3,1107,1,8,3,4,3,99],[1]]
+        self.assertEqual(actual, expected)
+
+    def test16(self):
+        actual = runIntcode([3,12,6,12,15,1,13,14,13,4,13,99,-1,0,1,9], 7)
+        expected = [[3,12,6,12,15,1,13,14,13,4,13,99,7,1,1,9],[1]]
+        self.assertEqual(actual, expected)
+
+    def test17(self):
+        actual = runIntcode([3,12,6,12,15,1,13,14,13,4,13,99,-1,0,1,9], 0)
+        expected = [[3,12,6,12,15,1,13,14,13,4,13,99,0,0,1,9],[0]]
+        self.assertEqual(actual, expected)
+
+    def test18(self):
+        actual = runIntcode([3,3,1105,-1,9,1101,0,0,12,4,12,99,1], 7)
+        expected = [[3,3,1105,7,9,1101,0,0,12,4,12,99,1],[1]]
+        self.assertEqual(actual, expected)
+
+    def test19(self):
+        actual = runIntcode([3,3,1105,-1,9,1101,0,0,12,4,12,99,1], 0)
+        expected = [[3,3,1105,0,9,1101,0,0,12,4,12,99,0],[0]]
+        self.assertEqual(actual, expected)
+
+    def test20(self):
+        run = runIntcode([3,21,1008,21,8,20,1005,20,22,107,8,21,20,1006,20,31,
+1106,0,36,98,0,0,1002,21,125,20,4,20,1105,1,46,104,
+999,1105,1,46,1101,1000,1,20,4,20,1105,1,46,98,99], 7)
+
+        self.assertEqual(run[1], [999])
+
+    def test21(self):
+        run = runIntcode([3,21,1008,21,8,20,1005,20,22,107,8,21,20,1006,20,31,
+1106,0,36,98,0,0,1002,21,125,20,4,20,1105,1,46,104,
+999,1105,1,46,1101,1000,1,20,4,20,1105,1,46,98,99], 8)
+
+        self.assertEqual(run[1], [1000])
+
+    def test22(self):
+        run = runIntcode([3,21,1008,21,8,20,1005,20,22,107,8,21,20,1006,20,31,
+1106,0,36,98,0,0,1002,21,125,20,4,20,1105,1,46,104,
+999,1105,1,46,1101,1000,1,20,4,20,1105,1,46,98,99], 9)
+
+        self.assertEqual(run[1], [1001])
 
 unittest.main(verbosity=2)
