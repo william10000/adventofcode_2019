@@ -16,7 +16,7 @@ testDirections = [
 class TestDay06(unittest.TestCase):
     # orbitMap = day_06.getOrbitedMap(testDirections)
 
-    def testgetOrbitedMap(self):
+    def test_getOrbitedMap(self):
         actual = day_06.getOrbitedMap(testDirections)
         expected = {
             'B': 'COM',
@@ -33,32 +33,68 @@ class TestDay06(unittest.TestCase):
         }
         self.assertEqual(actual, expected)
 
-    def testgetAllOrbits_01(self):
+    def test_getAllOrbits_01(self):
         orbitMap = day_06.getOrbitedMap(testDirections)
         actual = day_06.getAllOrbits(orbitMap, 'COM')
         expected = 0
         self.assertEqual(actual, expected)
 
-    def testgetAllOrbits_02(self):
+    def test_getAllOrbits_02(self):
         orbitMap = day_06.getOrbitedMap(testDirections)
         actual = day_06.getAllOrbits(orbitMap, 'B')
         expected = 1
         self.assertEqual(actual, expected)
 
-    def testgetAllOrbits_03(self):
+    def test_getAllOrbits_03(self):
         orbitMap = day_06.getOrbitedMap(testDirections)
         actual = day_06.getAllOrbits(orbitMap, 'K')
         expected = 6
         self.assertEqual(actual, expected)
 
-    def testgetTotalOfAllOrbits_01(self):
+    def test_getTotalOfAllOrbits_01(self):
         actual = day_06.getTotalOfAllOrbits(testDirections)
         expected = 42
         self.assertEqual(actual, expected)
 
-    def testgetTotalOfAllOrbits_02(self):
+    def test_getTotalOfAllOrbits_02(self):
         actual = day_06.getTotalOfAllOrbits(directions)
         expected = 119831
+        self.assertEqual(actual, expected)
+
+    def test_getPathToTarget_01(self):
+        orbitMap = day_06.getOrbitedMap(testDirections)
+        actual = day_06.getPathToTarget(orbitMap, 'K', 'COM')
+        expected = ['K', 'J', 'E', 'D', 'C', 'B', 'COM']
+        self.assertEqual(actual, expected)
+
+    def test_getPathToTarget_02(self):
+        orbitMap = day_06.getOrbitedMap(testDirections)
+        actual = day_06.getPathToTarget(orbitMap, 'C', 'COM')
+        expected = ['C', 'B', 'COM']
+        self.assertEqual(actual, expected)
+
+    def test_getPathToTarget_03(self):
+        orbitMap = day_06.getOrbitedMap(testDirections)
+        actual = day_06.getPathToTarget(orbitMap, 'COM', 'COM')
+        expected = ['COM']
+        self.assertEqual(actual, expected)
+
+    def test_countTransfersBetweenTwoPoints02(self):
+        orbitMap = day_06.getOrbitedMap(testDirections)
+        actual = day_06.countTransfersBetweenTwoPoints(orbitMap, 'COM', 'COM')
+        expected = 0
+        self.assertEqual(actual, expected)
+
+    def test_countTransfersBetweenTwoPoints03(self):
+        orbitMap = day_06.getOrbitedMap(testDirections)
+        actual = day_06.countTransfersBetweenTwoPoints(orbitMap, 'H', 'I')
+        expected = 3
+        self.assertEqual(actual, expected)
+
+    def test_countTransfersBetweenTwoPoints04(self):
+        orbitMap = day_06.getOrbitedMap(testDirections)
+        actual = day_06.countTransfersBetweenTwoPoints(orbitMap, 'B', 'G')
+        expected = 1
         self.assertEqual(actual, expected)
 
 

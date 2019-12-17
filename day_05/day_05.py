@@ -105,10 +105,10 @@ if __name__ == '__main__':
     unittest.TextTestRunner(verbosity=2).run(tests)
 
     print('Running parts 1 and 2')
-    print('Part 1 ')
+    print('Part 1')
     answerPart1 = runIntcode(inputUsed, 1)
     print(answerPart1[1])
 
-    print('Part 2 ')
+    print('Part 2')
     answerPart2 = runIntcode(inputUsed, 5)
     print(answerPart2[1])
